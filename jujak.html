@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>로또 QR 링크 생성기</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --primary: #2563eb;
+            --primary2: #1d4ed8;
+            --danger: #ef4444;
+            --ok: #16a34a;
+            --shadow: 0 10px 25px rgba(17, 24, 39, .08);
+            --radius: 18px;
+            --tap: 48px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .wrap {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 14px 14px 26px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -.3px;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-weight: 900;
+            font-size: 12px;
+            border: 1px solid #e0e7ff;
+            white-space: nowrap;
+            height: 32px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+            margin: 4px 0 8px;
+            font-weight: 800;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            height: var(--tap);
+            padding: 0 12px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: #f9fafb;
+            color: var(--text);
+            outline: none;
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        input[type="number"]:focus {
+            border-color: rgba(37, 99, 235, .55);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+            background: #fff;
+        }
+
+        .sets {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .set {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .setHead {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .setTitle {
+            font-weight: 1000;
+            font-size: 14px;
+            letter-spacing: -.2px;
+        }
+
+        .setMeta {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            height: 42px;
+            padding: 0 12px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: #fff;
+            font-weight: 950;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn.primary {
+            height: 52px;
+            font-size: 15px;
+            background: var(--primary);
+            border-color: rgba(37, 99, 235, .4);
+            color: #fff;
+        }
+
+        .btn.primary:hover {
+            background: var(--primary2);
+        }
+
+        .btn.soft {
+            background: #eff6ff;
+            border-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .btn.danger {
+            background: #fff5f5;
+            border-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn[disabled] {
+            opacity: .45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 드롭다운(세트 프리셋) */
+        .sel {
+            height: 42px;
+            padding: 0 12px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: #fff;
+            font-weight: 950;
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                linear-gradient(135deg, var(--muted) 50%, transparent 50%),
+                linear-gradient(to right, transparent, transparent);
+            background-position:
+                calc(100% - 16px) 18px,
+                calc(100% - 11px) 18px,
+                0 0;
+            background-size:
+                5px 5px,
+                5px 5px,
+                100% 100%;
+            background-repeat: no-repeat;
+            min-width: 132px;
+        }
+
+        .sel:focus {
+            border-color: rgba(37, 99, 235, .55);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+        }
+
+        .nums {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        .nums input {
+            text-align: center;
+            font-size: 17px;
+            font-weight: 1000;
+            border-radius: 14px;
+            background: #f3f4f6;
+            border: 1px solid var(--line);
+            height: 48px;
+            outline: none;
+        }
+
+        .nums input:focus {
+            background: #fff;
+            border-color: rgba(37, 99, 235, .55);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+        }
+
+        .belowSets {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .belowSets .btn {
+            height: 48px;
+            border-radius: 16px;
+            font-size: 14px;
+        }
+
+        .out {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 88px;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: #f9fafb;
+            outline: none;
+            font-size: 13px;
+            line-height: 1.4;
+            color: var(--text);
+            resize: vertical;
+        }
+
+        /* ✅ 버튼: 열기(강조) → 복사 */
+        .actionRow {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 10px;
+        }
+
+        .actionRow .btn {
+            width: 100%;
+            height: 52px;
+            border-radius: 16px;
+            font-size: 15px;
+        }
+
+        .msg {
+            font-size: 13px;
+            font-weight: 900;
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: #f9fafb;
+        }
+
+        .msg.ok {
+            color: var(--ok);
+            background: #ecfdf5;
+            border-color: #bbf7d0;
+        }
+
+        .msg.err {
+            color: var(--danger);
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        @media (max-width: 430px) {
+            .nums {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .actionRow {
+                grid-template-columns: 1.2fr 1fr;
+            }
+
+            .sel {
+                min-width: 118px;
+            }
+        }
+
+        /* ✅ 전체 화면 로딩 오버레이 */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(17, 24, 39, .45);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            padding: 24px;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        .overlayCard {
+            width: min(360px, 92vw);
+            background: #fff;
+            border: 1px solid rgba(229, 231, 235, .9);
+            border-radius: 18px;
+            box-shadow: 0 20px 40px rgba(17, 24, 39, .18);
+            padding: 18px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 4px solid rgba(37, 99, 235, .18);
+            border-top-color: rgba(37, 99, 235, 1);
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .overlayText {
+            font-size: 14px;
+            font-weight: 950;
+            color: var(--text);
+        }
+
+        .overlaySub {
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.35;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <h1 class="title">로또 QR 링크 생성기</h1>
+            <div class="pill" id="setBadge">1/5</div>
+        </div>
+
+        <div class="card">
+            <label>회차번호</label>
+            <input id="draw" type="number" inputmode="numeric" min="1" step="1" placeholder="예: 1205" value="1205" />
+
+            <div class="sets" id="sets"></div>
+
+            <div class="belowSets">
+                <button class="btn soft" id="addSetBtn">＋ 세트 추가</button>
+                <button class="btn" id="randAllBtn">🎲 전체 랜덤</button>
+                <button class="btn danger" id="resetBtn">↺ 초기화</button>
+            </div>
+
+            <div class="out">
+                <label>생성된 링크</label>
+                <textarea id="result" readonly placeholder="변경되면 자동으로 링크가 생성됩니다."></textarea>
+
+                <!-- ✅ 링크 생성 버튼 삭제 / ✅ 열기(강조) → 복사 순서 -->
+                <div class="actionRow">
+                    <button class="btn primary" id="openBtn">열기</button>
+                    <button class="btn" id="copyBtn">복사</button>
+                </div>
+
+                <div id="msg" class="msg" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ 전체 화면 로딩 -->
+    <div class="overlay" id="overlay" aria-hidden="true">
+        <div class="overlayCard" role="status" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <div class="overlayText">로딩중…</div>
+            <div class="overlaySub">당첨번호를 불러오고 있습니다.</div>
+        </div>
+    </div>
+
+    <script>
+        const BASE = "https://qr.dhlottery.co.kr/";
+        const DUMMY_TAIL = "1111111111";
+        const MAX_SETS = 5;
+        const EMPTY_SET_TOKEN = "n000000000000";
+
+        const API_BASE = "https://qr.dhlottery.co.kr/api/lottery/LOTTO/draw/";
+
+        const CORS_PROXIES = [
+            "https://cors.isomorphic-git.org/",
+            "https://thingproxy.freeboard.io/fetch/",
+            "https://api.allorigins.win/raw?url=",
+            "https://corsproxy.io/?",
+            "https://proxy.cors.sh/",
+            "https://cors.eu.org/",
+            "https://api.codetabs.com/v1/proxy?quest=",
+            "https://yacdn.org/proxy/",
+            "https://cors-anywhere.herokuapp.com/"
+        ];
+
+        function buildProxiedUrl(proxyBase, targetUrl) {
+            if (proxyBase.includes("allorigins.win/raw?url=")) {
+                return proxyBase + encodeURIComponent(targetUrl);
+            }
+            return proxyBase + targetUrl;
+        }
+
+        const elDraw = document.getElementById("draw");
+        const elSets = document.getElementById("sets");
+        const elResult = document.getElementById("result");
+        const elMsg = document.getElementById("msg");
+        const elSetBadge = document.getElementById("setBadge");
+
+        const elAddSetBtn = document.getElementById("addSetBtn");
+        const elRandAllBtn = document.getElementById("randAllBtn");
+        const elResetBtn = document.getElementById("resetBtn");
+
+        const elCopyBtn = document.getElementById("copyBtn");
+        const elOpenBtn = document.getElementById("openBtn");
+
+        const elOverlay = document.getElementById("overlay");
+
+        let setCount = 1;
+
+        // setStates[i] = { nums: [], preset: "random"|"1"|"2"|"3"|"4"|"5" }
+        let setStates = [{ nums: [], preset: "random" }];
+
+        const drawCache = new Map();
+
+        let loadingRef = 0;
+        function setLoading(on) {
+            if (on) loadingRef++;
+            else loadingRef = Math.max(0, loadingRef - 1);
+
+            const show = loadingRef > 0;
+            elOverlay.classList.toggle("show", show);
+            elOverlay.setAttribute("aria-hidden", show ? "false" : "true");
+
+            elAddSetBtn.disabled = show || setCount >= MAX_SETS;
+            elRandAllBtn.disabled = show;
+            elResetBtn.disabled = show;
+            elCopyBtn.disabled = show;
+            elOpenBtn.disabled = show;
+            elDraw.disabled = show;
+
+            document.querySelectorAll(".sel, .set .btn, .nums input").forEach(el => {
+                el.disabled = show;
+            });
+        }
+
+        function pad2(n) {
+            const v = Number(String(n).trim());
+            if (!Number.isInteger(v)) return "";
+            return String(v).padStart(2, "0");
+        }
+
+        function clampInt(v, min, max) {
+            if (!Number.isFinite(v)) return null;
+            const x = Math.trunc(v);
+            if (x < min) return min;
+            if (x > max) return max;
+            return x;
+        }
+
+        function showMsg(text, ok) {
+            if (!text) {
+                elMsg.style.display = "none";
+                elMsg.textContent = "";
+                elMsg.className = "msg";
+                return;
+            }
+            elMsg.style.display = "block";
+            elMsg.textContent = text;
+            elMsg.className = "msg " + (ok ? "ok" : "err");
+        }
+
+        function updateBadge() {
+            elSetBadge.textContent = `${setCount}/${MAX_SETS}`;
+            elAddSetBtn.disabled = setCount >= MAX_SETS;
+        }
+
+        function getSetInputs(idx) {
+            return [...document.querySelectorAll(`input[data-set="${idx}"]`)];
+        }
+
+        function getSetSelect(idx) {
+            return document.querySelector(`select[data-set-select="${idx}"]`);
+        }
+
+        function readSetNumsFromDOM(idx) {
+            return getSetInputs(idx).map(i => Number(String(i.value).trim()));
+        }
+
+        function writeSetNumsToDOM(idx, nums) {
+            const inputs = getSetInputs(idx);
+            nums.forEach((n, i) => { inputs[i].value = String(n); });
+        }
+
+        function syncSetStateFromDOM(idx) {
+            const state = setStates[idx] || { nums: [], preset: "random" };
+
+            const raw = readSetNumsFromDOM(idx);
+            const allEmpty = raw.every(n => !Number.isInteger(n));
+            if (allEmpty) {
+                state.nums = [];
+            } else {
+                state.nums = raw.map(n => Number.isInteger(n) ? n : null);
+            }
+
+            const sel = getSetSelect(idx);
+            if (sel) state.preset = sel.value || state.preset || "random";
+
+            setStates[idx] = state;
+        }
+
+        function autoSortIfComplete(idx) {
+            const nums = readSetNumsFromDOM(idx);
+            if (nums.some(n => !Number.isInteger(n))) {
+                syncSetStateFromDOM(idx);
+                scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+                return;
+            }
+            const sorted = [...nums].sort((a, b) => a - b);
+            writeSetNumsToDOM(idx, sorted);
+            setStates[idx].nums = [...sorted];
+            scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+        }
+
+        function randPickDistinct(fromArr, k) {
+            const arr = [...fromArr];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr.slice(0, k);
+        }
+
+        function randNumsExcluding(k, excludedSet) {
+            const pool = [];
+            for (let n = 1; n <= 45; n++) {
+                if (!excludedSet.has(n)) pool.push(n);
+            }
+            return randPickDistinct(pool, k);
+        }
+
+        async function fetchDrawInfo(round) {
+            if (drawCache.has(round)) return drawCache.get(round);
+
+            const targetUrl = API_BASE + String(round);
+            let lastErr = null;
+
+            for (const proxy of CORS_PROXIES) {
+                const proxiedUrl = buildProxiedUrl(proxy, targetUrl);
+                try {
+                    const res = await fetch(proxiedUrl, { method: "GET", cache: "no-store" });
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+
+                    const data = await res.json();
+                    const win = [data.drawNo1, data.drawNo2, data.drawNo3, data.drawNo4, data.drawNo5, data.drawNo6]
+                        .map(Number)
+                        .filter(n => Number.isInteger(n));
+                    const bonus = Number(data.bonusNo);
+
+                    if (win.length !== 6 || !Number.isInteger(bonus)) throw new Error("BAD_DATA");
+
+                    const info = { win, bonus };
+                    drawCache.set(round, info);
+                    return info;
+
+                } catch (e) {
+                    lastErr = e;
+                }
+            }
+            throw lastErr || new Error("PROXY_FAILED");
+        }
+
+        async function fillPreset(idx, preset) {
+            showMsg("", true);
+
+            for (let i = 0; i < setCount; i++) syncSetStateFromDOM(i);
+
+            setStates[idx] = setStates[idx] || { nums: [], preset: "random" };
+            setStates[idx].preset = preset;
+
+            if (preset === "random") {
+                fillRandom(idx);
+                showMsg("채움 완료", true);
+                scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+                return;
+            }
+
+            const round = clampInt(Number(elDraw.value), 1, 1000000);
+            if (!round) {
+                showMsg("회차번호를 먼저 입력해 주세요.", false);
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const info = await fetchDrawInfo(round);
+
+                const win = info.win;
+                const bonus = info.bonus;
+                const excluded = new Set([...win, bonus]);
+
+                let nums = [];
+
+                if (preset === "1") {
+                    nums = [...win];
+                } else if (preset === "2") {
+                    const five = randPickDistinct(win, 5);
+                    nums = [...five, bonus];
+                } else if (preset === "3") {
+                    const five = randPickDistinct(win, 5);
+                    const extra = randNumsExcluding(1, excluded)[0];
+                    nums = [...five, extra];
+                } else if (preset === "4") {
+                    const four = randPickDistinct(win, 4);
+                    const extras = randNumsExcluding(2, excluded);
+                    nums = [...four, ...extras];
+                } else if (preset === "5") {
+                    const three = randPickDistinct(win, 3);
+                    const extras = randNumsExcluding(3, excluded);
+                    nums = [...three, ...extras];
+                } else {
+                    fillRandom(idx);
+                    showMsg("채움 완료", true);
+                    scheduleAutoBuild();
+                    return;
+                }
+
+                nums = nums.map(Number).sort((a, b) => a - b);
+                writeSetNumsToDOM(idx, nums);
+                setStates[idx].nums = [...nums];
+                showMsg("채움 완료", true);
+                scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+
+            } catch (e) {
+                showMsg("당첨번호 불러오기 실패(프록시/네트워크 문제)", false);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function makeSet(index) {
+            const wrap = document.createElement("div");
+            wrap.className = "set";
+            wrap.dataset.index = String(index);
+
+            const head = document.createElement("div");
+            head.className = "setHead";
+
+            const title = document.createElement("div");
+            title.className = "setTitle";
+            title.textContent = `세트 ${index + 1}`;
+
+            const meta = document.createElement("div");
+            meta.className = "setMeta";
+
+            const sel = document.createElement("select");
+            sel.className = "sel";
+            sel.dataset.setSelect = String(index);
+            sel.innerHTML = `
+        <option value="random">랜덤</option>
+        <option value="1">1등</option>
+        <option value="2">2등</option>
+        <option value="3">3등</option>
+        <option value="4">4등</option>
+        <option value="5">5등</option>
+      `;
+            sel.addEventListener("change", async () => {
+                await fillPreset(index, sel.value);
+            });
+
+            const clearBtn = document.createElement("button");
+            clearBtn.type = "button";
+            clearBtn.className = "btn";
+            clearBtn.textContent = "비우기";
+            clearBtn.addEventListener("click", () => {
+                clearSet(index);
+                showMsg("", true);
+                scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+            });
+
+            const delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.className = "btn danger";
+            delBtn.textContent = "삭제";
+            delBtn.addEventListener("click", () => {
+                removeSet(index);
+                scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+            });
+
+            meta.appendChild(sel);
+            meta.appendChild(clearBtn);
+            meta.appendChild(delBtn);
+
+            head.appendChild(title);
+            head.appendChild(meta);
+
+            const nums = document.createElement("div");
+            nums.className = "nums";
+
+            for (let i = 0; i < 6; i++) {
+                const inp = document.createElement("input");
+                inp.type = "number";
+                inp.inputMode = "numeric";
+                inp.min = "1";
+                inp.max = "45";
+                inp.step = "1";
+                inp.placeholder = String(i + 1);
+                inp.dataset.set = String(index);
+                inp.dataset.pos = String(i);
+
+                inp.addEventListener("input", () => {
+                    showMsg("", true);
+                    const v = Number(String(inp.value).trim());
+                    if (Number.isInteger(v)) {
+                        if (v < 1) inp.value = "1";
+                        if (v > 45) inp.value = "45";
+                    }
+                    syncSetStateFromDOM(index);
+                    scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성(디바운스)
+                });
+
+                inp.addEventListener("change", () => autoSortIfComplete(index));
+                nums.appendChild(inp);
+            }
+
+            wrap.appendChild(head);
+            wrap.appendChild(nums);
+
+            queueMicrotask(() => {
+                const state = setStates[index] || { nums: [], preset: "random" };
+
+                sel.value = state.preset || "random";
+
+                const saved = state.nums || [];
+                if (saved.length === 6) {
+                    const inputs = getSetInputs(index);
+                    for (let i = 0; i < 6; i++) {
+                        const v = saved[i];
+                        inputs[i].value = Number.isInteger(v) ? String(v) : "";
+                    }
+                }
+
+                // 새로 생성되는 세트(또는 초기 세트)가 비어있으면 랜덤으로 채움
+                if (!saved || saved.length === 0) {
+                    sel.value = "random";
+                    setStates[index].preset = "random";
+                    fillRandom(index);
+                }
+            });
+
+            return wrap;
+        }
+
+        function syncDeleteButtons() {
+            const canDelete = setCount > 1;
+            document.querySelectorAll(".set").forEach((s) => {
+                const delBtn = s.querySelector(".btn.danger");
+                if (delBtn) delBtn.disabled = !canDelete;
+            });
+        }
+
+        function renderAll() {
+            elSets.innerHTML = "";
+            for (let i = 0; i < setCount; i++) elSets.appendChild(makeSet(i));
+            updateBadge();
+            syncDeleteButtons();
+            showMsg("", true);
+        }
+
+        function addSet() {
+            if (setCount >= MAX_SETS) {
+                showMsg("세트는 최대 5개까지 가능합니다.", false);
+                return;
+            }
+
+            for (let i = 0; i < setCount; i++) syncSetStateFromDOM(i);
+
+            setStates.push({ nums: [], preset: "random" });
+            setCount += 1;
+
+            renderAll();
+
+            const last = document.querySelector(`.set[data-index="${setCount - 1}"]`);
+            if (last) last.scrollIntoView({ behavior: "smooth", block: "start" });
+            showMsg("", true);
+
+            scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+        }
+
+        function removeSet(removeIdx) {
+            if (setCount <= 1) {
+                showMsg("세트는 최소 1개가 필요합니다.", false);
+                return;
+            }
+
+            for (let i = 0; i < setCount; i++) syncSetStateFromDOM(i);
+
+            setStates.splice(removeIdx, 1);
+            setCount -= 1;
+
+            renderAll();
+            showMsg("", true);
+        }
+
+        function clearSet(idx) {
+            for (const inp of getSetInputs(idx)) inp.value = "";
+            setStates[idx].nums = [];
+            setStates[idx].preset = "random";
+            const sel = getSetSelect(idx);
+            if (sel) sel.value = "random";
+        }
+
+        function fillRandom(idx) {
+            const pool = Array.from({ length: 45 }, (_, i) => i + 1);
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            const pick = pool.slice(0, 6).sort((a, b) => a - b);
+            writeSetNumsToDOM(idx, pick);
+
+            setStates[idx] = setStates[idx] || { nums: [], preset: "random" };
+            setStates[idx].nums = [...pick];
+            setStates[idx].preset = "random";
+        }
+
+        function fillRandomAll() {
+            for (let i = 0; i < setCount; i++) syncSetStateFromDOM(i);
+            for (let i = 0; i < setCount; i++) fillRandom(i);
+            showMsg("전체 랜덤 완료", true);
+            scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+        }
+
+        function resetAll() {
+            elDraw.value = "1205";
+            setCount = 1;
+            setStates = [{ nums: [], preset: "random" }];
+            drawCache.clear();
+            renderAll();
+            elResult.value = "";
+            showMsg("", true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            scheduleAutoBuild(); // ✅ 변경 발생 -> 자동 링크 생성
+        }
+
+        function buildTokenFromSet(idx) {
+            const inputs = getSetInputs(idx);
+            const raw = inputs.map(i => String(i.value).trim());
+
+            const allEmpty = raw.every(v => v === "");
+            if (allEmpty) {
+                setStates[idx].nums = [];
+                return EMPTY_SET_TOKEN;
+            }
+
+            const nums = raw.map(v => Number(v));
+
+            if (nums.some(n => !Number.isInteger(n))) {
+                showMsg(`세트 ${idx + 1}: 6개를 모두 입력하거나 전부 비워두세요.`, false);
+                return null;
+            }
+            if (nums.some(n => n < 1 || n > 45)) {
+                showMsg(`세트 ${idx + 1}: 1~45만 가능합니다.`, false);
+                return null;
+            }
+            const uniq = new Set(nums);
+            if (uniq.size !== 6) {
+                showMsg(`세트 ${idx + 1}: 중복 숫자가 있습니다.`, false);
+                return null;
+            }
+
+            const normalized = [...nums].sort((a, b) => a - b);
+            writeSetNumsToDOM(idx, normalized);
+            setStates[idx].nums = [...normalized];
+
+            const q = normalized.map(pad2).join("");
+            if (q.length !== 12) {
+                showMsg(`세트 ${idx + 1}: 변환 오류`, false);
+                return null;
+            }
+            return "q" + q;
+        }
+
+        function validateAndBuild() {
+            const draw = clampInt(Number(elDraw.value), 1, 1000000);
+            if (!draw) {
+                showMsg("회차번호를 입력해 주세요.", false);
+                return null;
+            }
+
+            const tokens = [];
+            for (let s = 0; s < setCount; s++) {
+                const token = buildTokenFromSet(s);
+                if (!token) return null;
+                tokens.push(token);
+            }
+
+            while (tokens.length < MAX_SETS) {
+                tokens.push(EMPTY_SET_TOKEN);
+            }
+
+            return `${BASE}?v=${draw}${tokens.join("")}${DUMMY_TAIL}`;
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (e) {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                const ok = document.execCommand("copy");
+                document.body.removeChild(ta);
+                return ok;
+            }
+        }
+
+        // ✅ 자동 링크 생성(디바운스): "변경 사항이 하나 이상 생길 때마다"
+        let autoTimer = null;
+        function scheduleAutoBuild() {
+            if (autoTimer) clearTimeout(autoTimer);
+            autoTimer = setTimeout(() => {
+                const url = validateAndBuild();
+                if (!url) return; // 입력 오류면 메시지 이미 표시됨
+                elResult.value = url;
+                showMsg("자동 생성됨", true);
+            }, 220);
+        }
+
+        elAddSetBtn.addEventListener("click", addSet);
+        elRandAllBtn.addEventListener("click", fillRandomAll);
+        elResetBtn.addEventListener("click", resetAll);
+
+        // 회차 변경도 자동 생성 트리거
+        elDraw.addEventListener("input", () => {
+            showMsg("", true);
+            scheduleAutoBuild();
+        });
+
+        elCopyBtn.addEventListener("click", async () => {
+            const url = elResult.value || validateAndBuild();
+            if (!url) return;
+            elResult.value = url;
+            const ok = await copyToClipboard(url);
+            showMsg(ok ? "복사 완료" : "복사 실패", ok);
+        });
+
+        elOpenBtn.addEventListener("click", () => {
+            const url = elResult.value || validateAndBuild();
+            if (!url) return;
+            elResult.value = url;
+            window.open(url, "_blank", "noopener,noreferrer");
+            showMsg("열기 완료", true);
+        });
+
+        // init
+        renderAll();
+        scheduleAutoBuild(); // 초기 랜덤 세트 생성 후 링크 자동 생성
+    </script>
+</body>
+
+</html>
